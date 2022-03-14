@@ -4,6 +4,7 @@ package ru.manzharovn.herofinder.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,19 +24,33 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import ru.manzharovn.domain.models.Power
 import ru.manzharovn.herofinder.R
 import ru.manzharovn.herofinder.presentation.heroBuilderScreen.HeroBuilderViewModel
+import ru.manzharovn.herofinder.presentation.heroBuilderScreen.HeroBuilderViewModelFactory
 import ru.manzharovn.herofinder.presentation.ui.theme.HeroFinderTheme
 import ru.manzharovn.herofinder.presentation.ui.theme.Shapes
 import ru.manzharovn.herofinder.presentation.utils.Batman
+import ru.manzharovn.herofinder.presentation.utils.Status
+import javax.inject.Inject
 
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var heroBuilderViewModelFactory: HeroBuilderViewModelFactory
+
+    private val heroBuilderViewModel: HeroBuilderViewModel by viewModels{
+        heroBuilderViewModelFactory
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        (application as MyApp).appComponent.inject(this)
         super.onCreate(savedInstanceState)
+        heroBuilderViewModel.getData()
         setContent {
             HeroFinderTheme {
-                HeroBuilder()
+                HeroBuilderScreen(heroBuilderViewModel)
             }
         }
     }
@@ -77,7 +92,12 @@ fun HeroCard(){
 
 @Composable
 fun HeroBuilderScreen(viewModel: HeroBuilderViewModel) {
-
+    val status = viewModel.getStatus()
+    if(status == Status.OK)
+        HeroBuilder(viewModel.listOfPower)
+    else {
+        ErrorMessage(status)
+    }
 }
 
 @Composable
@@ -123,11 +143,30 @@ fun PowerRow(
     }
 }
 
+@Composable
+fun ErrorMessage(status: Status){
+    Text(
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentHeight(),
+        textAlign = TextAlign.Center,
+        text = "JOPA"
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 fun HeroCardPreview() {
     HeroFinderTheme {
         HeroCard()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ErrorMessagePreview(){
+    HeroFinderTheme {
+        ErrorMessage(status = Status.NETWORK)
     }
 }
 
