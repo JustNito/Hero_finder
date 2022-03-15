@@ -1,5 +1,6 @@
 package ru.manzharovn.herofinder.presentation.heroBuilderScreen
 
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -66,6 +67,7 @@ class HeroBuilderViewModel(private val getPowersUseCase: GetPowersUseCase) : Vie
             when (val result = getPowersUseCase()) {
                is Result.Success -> {
                   listOfPower.addAll(result.data)
+                  Log.i("HeroBuilder", "listOfPower length: ${listOfPower.size}")
                   _status = Status.OK
                }
 

@@ -11,3 +11,5 @@ data class ComicVineResponse<T> (
     val offset: String,
     val results: List<T>
     )
+
+fun <T>ComicVineResponse<T>.isMultipage(): Boolean = numberOfTotalResults > numberOfPageResults

@@ -6,8 +6,8 @@ import ru.manzharovn.data.network.ComicVineResponse
 import javax.inject.Inject
 
 class PowersRemoteDataSource @Inject constructor(val comicVineApi: ComicVineApi) {
-    suspend fun getPowers(): ComicVineResponse<PowerEntity> =
+    suspend fun getPowers(offset: Int = 0): ComicVineResponse<PowerEntity> =
         comicVineApi
             .retrofitService
-            .getPowers()
+            .getPowers(offset)
 }
