@@ -5,12 +5,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -91,28 +96,86 @@ fun HeroCard(){
 
 
 @Composable
+fun LoadingScreen(){
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        CircularProgressIndicator()
+    }
+
+}
+
+@Composable
 fun HeroBuilderScreen(viewModel: HeroBuilderViewModel) {
-    val status = viewModel.getStatus()
-    if(status == Status.OK)
-        HeroBuilder(viewModel.listOfPower)
-    else {
-        ErrorMessage(status)
+    Scaffold(
+        topBar = {
+            if(viewModel.amountOfChosenPowers == 0) {
+                TopAppBar(
+                    title = {
+                        Text(text = stringResource(R.string.hero_builder_default_title))
+                    }
+                )
+            } else {
+                TopAppBar(
+                    title = {
+                        Text(text = stringResource(
+                                id = R.string.hero_builder_expanded_title,
+                                viewModel.amountOfChosenPowers
+                            )
+                        )
+                    },
+                    actions = {
+                        IconButton(onClick = viewModel::clearChosenPowers ) {
+                            Icon(Icons.Filled.Clear, contentDescription = "Restart")
+                        }
+                    }
+                )
+            }
+        }
+    ) {
+        when (val status = viewModel.status) {
+            Status.OK -> HeroBuilder(
+                viewModel.listOfPower,
+                viewModel::isPowerChosen,
+                viewModel::choosePower,
+                viewModel::unchoosePower
+            )
+            Status.LOADING -> LoadingScreen()
+            else -> {
+                ErrorMessage(
+                    status,
+                    viewModel::getData
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun HeroBuilder(powers: List<Power> = Batman.powers) {
+fun HeroBuilder(
+    powers: List<Power>,
+    isPowerChosen : (Power) -> Boolean,
+    choosePower: (Power) -> Unit,
+    unchoosePower: (Power) -> Unit,
+) {
     Column(modifier = Modifier.padding(8.dp)) {
         LazyColumn(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             items(items = powers) { power ->
-                PowerRow(power = power)
+                PowerRow(
+                    power = power,
+                    isPowerChosen = isPowerChosen,
+                    choosePower = choosePower,
+                    unchoosePower = unchoosePower
+                )
             }
         }
         Button(modifier = Modifier.fillMaxWidth(), onClick = {}) {
-            Text("Search")
+            Text(stringResource(R.string.search_button))
         }
     }
 }
@@ -120,21 +183,30 @@ fun HeroBuilder(powers: List<Power> = Batman.powers) {
 @Composable
 fun PowerRow(
     modifier: Modifier = Modifier,
-    power: Power
+    power: Power,
+    isPowerChosen : (Power) -> Boolean,
+    choosePower: (Power) -> Unit,
+    unchoosePower: (Power) -> Unit,
 ){
-    var isClicked by remember {
-        mutableStateOf(false)
-    }
+    var isClicked = isPowerChosen(power)
+    val surfaceColor by animateColorAsState(targetValue = if(isClicked) Color.Green else Color.White)
     Surface(
         modifier = modifier
             .padding(8.dp),
         shape = RoundedCornerShape(50),
-        color = if(isClicked) Color.Green else Color.White,
+        color = surfaceColor,
         elevation = 5.dp
     ) {
         Text(
             modifier = Modifier
-                .clickable { isClicked = !isClicked }
+                .clickable {
+                    if (!isClicked) {
+                        choosePower(power)
+                    } else {
+                        unchoosePower(power)
+                    }
+                    isClicked = !isClicked
+                }
                 .fillMaxSize()
                 .padding(4.dp),
             textAlign = TextAlign.Center,
@@ -144,14 +216,23 @@ fun PowerRow(
 }
 
 @Composable
-fun ErrorMessage(status: Status){
-    Text(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentHeight(),
-        textAlign = TextAlign.Center,
-        text = "JOPA"
-    )
+fun ErrorMessage(status: Status, tryAgain: () -> Unit){
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            textAlign = TextAlign.Center,
+            text = "JOPA"
+        )
+        Button(
+            modifier = Modifier.padding(all = 8.dp),
+            onClick = tryAgain
+        ) {
+            Text(stringResource(R.string.try_again_button))
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -166,7 +247,7 @@ fun HeroCardPreview() {
 @Composable
 fun ErrorMessagePreview(){
     HeroFinderTheme {
-        ErrorMessage(status = Status.NETWORK)
+        ErrorMessage(status = Status.NETWORK,{})
     }
 }
 
@@ -174,6 +255,6 @@ fun ErrorMessagePreview(){
 @Composable
 fun DefaultPreview() {
     HeroFinderTheme {
-        HeroBuilder()
+        HeroBuilder(Batman.powers, {false},{},{})
     }
 }
