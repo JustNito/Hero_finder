@@ -1,11 +1,14 @@
 package ru.manzharovn.data.network
 
+import kotlinx.coroutines.*
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Query
 import ru.manzharovn.data.models.PowerEntity
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
 
 @Singleton
 class ComicVineApi @Inject constructor(val retrofit: Retrofit) {
@@ -20,15 +23,16 @@ class ComicVineApi @Inject constructor(val retrofit: Retrofit) {
     suspend fun <T> requestForRemainingPages(
         response: ComicVineResponse<T>,
         request: suspend (offset: Int) -> ComicVineResponse<T>
-    ): List<T> {
-        var results = response.results.toMutableList()
+    ): List<T> = withContext(coroutineContext) {
+
+        val results = mutableListOf<Deferred<List<T>>>()
         val numberOfTotalResults = response.numberOfTotalResults.toInt()
         val limit = response.limit.toInt()
-        var numberOfPages: Int = (numberOfTotalResults / limit) - if(numberOfTotalResults % limit == 0) 1 else 0
+        val numberOfPages: Int = (numberOfTotalResults / limit) - if(numberOfTotalResults % limit == 0) 1 else 0
         for(page in 1..numberOfPages) {
-            var offset = page * limit
-            results.addAll(request(offset).results)
+            val offset = page * limit
+            results.add(async { request(offset).results })
         }
-        return results.toList()
+        return@withContext results.awaitAll().flatten()
     }
 }

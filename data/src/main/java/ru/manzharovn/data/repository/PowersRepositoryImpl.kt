@@ -14,10 +14,14 @@ class PowersRepositoryImpl @Inject constructor(val remoteDataSource: PowersRemot
         var response = remoteDataSource.getPowers()
         var listOfPowers = response.results
         if(response.isMultipage()) {
-            listOfPowers = remoteDataSource
-                .comicVineApi
-                .requestForRemainingPages(
-                    response, remoteDataSource::getPowers
+            listOfPowers = listOfPowers.toMutableList()
+                listOfPowers.addAll(
+                    remoteDataSource
+                        .comicVineApi
+                        .requestForRemainingPages(
+                            response,
+                            remoteDataSource::getPowers
+                        )
                 )
         }
         return mapPowersToDomain(listOfPowers)
