@@ -9,9 +9,9 @@ import javax.inject.Singleton
 @Singleton
 class ComicVineApi @Inject constructor(val retrofit: Retrofit) {
     interface ComicVineApiService {
-        //@Headers("api-key: " + ComicVineInfo.API_KEY)
-        @GET("powers?api_key=${ComicVineInfo.API_KEY}&format=json&field_list=name")
+        @GET("powers?field_list=name")
         suspend fun getPowers(): ComicVineResponse<PowerEntity>
+
     }
     val retrofitService: ComicVineApiService by lazy {
         retrofit.create(ComicVineApiService::class.java)
