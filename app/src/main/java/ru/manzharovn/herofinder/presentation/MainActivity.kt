@@ -14,14 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Replay
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,14 +25,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import ru.manzharovn.domain.models.Power
 import ru.manzharovn.herofinder.R
 import ru.manzharovn.herofinder.presentation.heroBuilderScreen.HeroBuilderViewModel
 import ru.manzharovn.herofinder.presentation.heroBuilderScreen.HeroBuilderViewModelFactory
 import ru.manzharovn.herofinder.presentation.ui.theme.HeroFinderTheme
-import ru.manzharovn.herofinder.presentation.ui.theme.Shapes
-import ru.manzharovn.herofinder.presentation.utils.Batman
 import ru.manzharovn.herofinder.presentation.utils.Status
 import javax.inject.Inject
 
@@ -52,7 +45,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         (application as MyApp).appComponent.inject(this)
         super.onCreate(savedInstanceState)
-        heroBuilderViewModel.getData()
+        heroBuilderViewModel.getPowers()
         setContent {
             HeroFinderTheme {
                 HeroBuilderScreen(heroBuilderViewModel)
@@ -79,14 +72,14 @@ fun HeroCard(){
             )
             Column(modifier = Modifier.padding(8.dp)) {
                 Text(
-                    text = Batman.name,
+                    text = "",
                     style = MaterialTheme.typography.h6
                 )
                 Text(
                     modifier = Modifier.padding(top = 8.dp),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 5,
-                    text = Batman.batmanInfo,
+                    text = "",
                     style = MaterialTheme.typography.body1,
                 )
             }
@@ -138,6 +131,8 @@ fun HeroBuilderScreen(viewModel: HeroBuilderViewModel) {
         when (val status = viewModel.status) {
             Status.OK -> HeroBuilder(
                 viewModel.listOfPower,
+                viewModel.amountOfFoundHeroes,
+                viewModel.heroesStatus,
                 viewModel::isPowerChosen,
                 viewModel::choosePower,
                 viewModel::unchoosePower
@@ -146,7 +141,7 @@ fun HeroBuilderScreen(viewModel: HeroBuilderViewModel) {
             else -> {
                 ErrorMessage(
                     status,
-                    viewModel::getData
+                    viewModel::getPowers
                 )
             }
         }
@@ -156,6 +151,8 @@ fun HeroBuilderScreen(viewModel: HeroBuilderViewModel) {
 @Composable
 fun HeroBuilder(
     powers: List<Power>,
+    amountOfFoundHeroes: Int,
+    heroesStatus: Status,
     isPowerChosen : (Power) -> Boolean,
     choosePower: (Power) -> Unit,
     unchoosePower: (Power) -> Unit,
@@ -174,9 +171,66 @@ fun HeroBuilder(
                 )
             }
         }
-        Button(modifier = Modifier.fillMaxWidth(), onClick = {}) {
-            Text(stringResource(R.string.search_button))
+        Basement(
+            amountOfFoundHeroes,
+            heroesStatus
+        )
+    }
+}
+
+@Composable
+fun Basement(
+    amountOfFoundHeroes: Int,
+    heroesStatus: Status
+) {
+    var isButtonEnabled by remember {
+        mutableStateOf(true)
+    }
+    when(heroesStatus) {
+        Status.LOADING -> {
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    style = MaterialTheme.typography.h6,
+                    text = "Found heroes: "
+                )
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .padding(top = 2.dp)
+               )
+            }
+            isButtonEnabled = false
         }
+        Status.OK -> {
+            Text(
+                modifier = Modifier.padding(top = 8.dp),
+                style = MaterialTheme.typography.h6,
+                text = "Found heroes: $amountOfFoundHeroes"
+            )
+            isButtonEnabled = amountOfFoundHeroes != 0
+        }
+        else -> {
+            Text(
+                modifier = Modifier
+                    .padding(top = 8.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.h6,
+                text = "No connection"
+            )
+            isButtonEnabled = false
+        }
+    }
+
+    Button(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = {},
+        enabled = isButtonEnabled
+    ) {
+        Text(stringResource(R.string.search_button))
     }
 }
 
@@ -255,6 +309,6 @@ fun ErrorMessagePreview(){
 @Composable
 fun DefaultPreview() {
     HeroFinderTheme {
-        HeroBuilder(Batman.powers, {false},{},{})
+        HeroBuilder(listOf(),100, Status.LOADING, { false },{},{})
     }
 }
