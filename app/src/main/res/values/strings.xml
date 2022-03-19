@@ -2,7 +2,7 @@
     <string name="app_name">Hero Finder</string>
     <string name="hero_builder_default_title">Choose Super Powers!</string>
     <string name="hero_builder_expanded_title">Number of chosen powers: %d</string>
-    <string name="search_button">Search</string>
+    <string name="search_button">Show</string>
     <string name="try_again_button">Try Again</string>
 
 </resources>
