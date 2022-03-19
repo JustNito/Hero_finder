@@ -1,15 +1,14 @@
-package ru.manzharovn.data.network
+package ru.manzharovn.data.network.response
 
 import com.squareup.moshi.Json
+import ru.manzharovn.data.models.HeroEntity
 
-data class ComicVineResponse<T> (
+data class HeroByIdResponse(
     @Json(name = "status_code") val statusCode: String,
     val error: String,
     @Json(name = "number_of_total_results") val numberOfTotalResults: String,
     @Json(name = "number_of_page_results") val numberOfPageResults: String,
     val limit: String,
     val offset: String,
-    val results: List<T>
-    )
-
-fun <T>ComicVineResponse<T>.isMultipage(): Boolean = numberOfTotalResults > numberOfPageResults
+    val results: HeroEntity
+)
