@@ -2,8 +2,7 @@ package ru.manzharovn.data.repository
 
 import ru.manzharovn.data.datasource.PowersRemoteDataSource
 import ru.manzharovn.data.models.PowerEntity
-import ru.manzharovn.data.network.ComicVineResponse
-import ru.manzharovn.data.network.isMultipage
+import ru.manzharovn.data.network.response.isMultipage
 import ru.manzharovn.domain.models.Power
 import ru.manzharovn.domain.repository.PowersRepository
 import javax.inject.Inject
@@ -28,5 +27,5 @@ class PowersRepositoryImpl @Inject constructor(val remoteDataSource: PowersRemot
     }
 
     private fun mapPowersToDomain(powers: List<PowerEntity>): List<Power> =
-        powers.map { Power(it.name) }
+        powers.map { Power(it.name, it.id) }
 }
