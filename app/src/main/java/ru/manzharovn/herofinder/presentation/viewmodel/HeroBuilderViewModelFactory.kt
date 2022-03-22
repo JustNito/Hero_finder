@@ -1,4 +1,4 @@
-package ru.manzharovn.herofinder.presentation.heroBuilderScreen
+package ru.manzharovn.herofinder.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

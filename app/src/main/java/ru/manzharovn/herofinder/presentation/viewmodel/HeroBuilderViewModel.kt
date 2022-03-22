@@ -1,13 +1,11 @@
-package ru.manzharovn.herofinder.presentation.heroBuilderScreen
+package ru.manzharovn.herofinder.presentation.viewmodel
 
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
-import okhttp3.Dispatcher
 import ru.manzharovn.domain.models.ErrorEntity
-import ru.manzharovn.domain.models.HeroShortDescription
 import ru.manzharovn.domain.models.Power
 import ru.manzharovn.domain.models.Result
 import ru.manzharovn.domain.usecase.GetPowersUseCase
@@ -58,9 +56,12 @@ class HeroBuilderViewModel(
          ErrorEntity.AccessDenied -> Status.ACCESS_DENIED
          ErrorEntity.ServiceUnavailable -> Status.UNAVAILABLE
          ErrorEntity.Network -> Status.NETWORK
+         ErrorEntity.CoroutineCancel -> Status.UNKNOWN
          ErrorEntity.NotFound -> Status.NOT_FOUND
       }
    }
+
+   fun getHeroIds(): List<Int> = heroIds
 
    fun clearChosenPowers() {
       chosenPowers.clear()
@@ -104,7 +105,12 @@ class HeroBuilderViewModel(
                _heroesStatus = Status.OK
             }
             is Result.Error -> {
-               _heroesStatus = Status.NETWORK
+               when(result.error) {
+                  is ErrorEntity.Network -> {
+                     _heroesStatus = Status.NETWORK
+                  }
+                  is ErrorEntity.CoroutineCancel -> {}
+               }
             }
          }
          updateAmountOfFoundHeroes()
@@ -121,7 +127,6 @@ class HeroBuilderViewModel(
                   Log.i("HeroBuilder", "listOfPower length: ${listOfPower.size}")
                   _status = Status.OK
                }
-
                is Result.Error -> changeStatusByError(result.error)
             }
          }
