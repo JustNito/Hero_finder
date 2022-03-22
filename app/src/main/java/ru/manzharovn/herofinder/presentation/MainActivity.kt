@@ -2,6 +2,7 @@ package ru.manzharovn.herofinder.presentation
 
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -25,15 +26,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import ru.manzharovn.domain.models.Power
 import ru.manzharovn.herofinder.R
-import ru.manzharovn.herofinder.presentation.heroBuilderScreen.HeroBuilderViewModel
-import ru.manzharovn.herofinder.presentation.heroBuilderScreen.HeroBuilderViewModelFactory
+import ru.manzharovn.herofinder.presentation.ui.herobuilder.HeroBuilderScreen
+import ru.manzharovn.herofinder.presentation.ui.herolist.HeroListScreen
+import ru.manzharovn.herofinder.presentation.viewmodel.HeroBuilderViewModel
+import ru.manzharovn.herofinder.presentation.viewmodel.HeroBuilderViewModelFactory
 import ru.manzharovn.herofinder.presentation.ui.theme.HeroFinderTheme
+import ru.manzharovn.herofinder.presentation.utils.HeroScreens
 import ru.manzharovn.herofinder.presentation.utils.Status
+import ru.manzharovn.herofinder.presentation.viewmodel.HeroListViewModel
+import ru.manzharovn.herofinder.presentation.viewmodel.HeroListViewModelFactory
 import javax.inject.Inject
 
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var heroListViewModelFactory: HeroListViewModelFactory
 
     @Inject
     lateinit var heroBuilderViewModelFactory: HeroBuilderViewModelFactory
@@ -42,273 +54,54 @@ class MainActivity : ComponentActivity() {
         heroBuilderViewModelFactory
     }
 
+    private val heroListViewModel: HeroListViewModel by viewModels {
+        heroListViewModelFactory
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         (application as MyApp).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         heroBuilderViewModel.getPowers()
         setContent {
             HeroFinderTheme {
-                HeroBuilderScreen(heroBuilderViewModel)
-            }
-        }
-    }
-}
-
-@Composable
-fun HeroCard(){
-    Surface(
-        shape = RoundedCornerShape(size = 10.dp),
-        elevation = 5.dp,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Image(
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(150.dp),
-                painter = painterResource(id = R.drawable.batman),
-                contentDescription = "Hero image"
-            )
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(
-                    text = "",
-                    style = MaterialTheme.typography.h6
-                )
-                Text(
-                    modifier = Modifier.padding(top = 8.dp),
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 5,
-                    text = "",
-                    style = MaterialTheme.typography.body1,
+                HeroApp(
+                    heroBuilderViewModel = heroBuilderViewModel,
+                    heroListViewModel = heroListViewModel
                 )
             }
         }
     }
 }
-
-
 @Composable
-fun LoadingScreen(){
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator()
-    }
-
-}
-
-@Composable
-fun HeroBuilderScreen(viewModel: HeroBuilderViewModel) {
-    Scaffold(
-        topBar = {
-            if(viewModel.amountOfChosenPowers == 0) {
-                TopAppBar(
-                    title = {
-                        Text(text = stringResource(R.string.hero_builder_default_title))
-                    }
-                )
-            } else {
-                TopAppBar(
-                    title = {
-                        Text(text = stringResource(
-                                id = R.string.hero_builder_expanded_title,
-                                viewModel.amountOfChosenPowers
-                            )
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = viewModel::clearChosenPowers ) {
-                            Icon(Icons.Filled.Clear, contentDescription = "Restart")
-                        }
-                    }
-                )
-            }
-        }
-    ) {
-        when (val status = viewModel.status) {
-            Status.OK -> HeroBuilder(
-                viewModel.listOfPower,
-                viewModel.amountOfFoundHeroes,
-                viewModel.heroesStatus,
-                viewModel::isPowerChosen,
-                viewModel::choosePower,
-                viewModel::unchoosePower
-            )
-            Status.LOADING -> LoadingScreen()
-            else -> {
-                ErrorMessage(
-                    status,
-                    viewModel::getPowers
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun HeroBuilder(
-    powers: List<Power>,
-    amountOfFoundHeroes: Int,
-    heroesStatus: Status,
-    isPowerChosen : (Power) -> Boolean,
-    choosePower: (Power) -> Unit,
-    unchoosePower: (Power) -> Unit,
-) {
-    Column(modifier = Modifier.padding(8.dp)) {
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            items(items = powers) { power ->
-                PowerRow(
-                    power = power,
-                    isPowerChosen = isPowerChosen,
-                    choosePower = choosePower,
-                    unchoosePower = unchoosePower
-                )
-            }
-        }
-        Basement(
-            amountOfFoundHeroes,
-            heroesStatus
-        )
-    }
-}
-
-@Composable
-fun Basement(
-    amountOfFoundHeroes: Int,
-    heroesStatus: Status
-) {
-    var isButtonEnabled by remember {
-        mutableStateOf(true)
-    }
-    when(heroesStatus) {
-        Status.LOADING -> {
-            Row(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    style = MaterialTheme.typography.h6,
-                    text = "Found heroes: "
-                )
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .padding(top = 2.dp)
-               )
-            }
-            isButtonEnabled = false
-        }
-        Status.OK -> {
-            Text(
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.h6,
-                text = "Found heroes: $amountOfFoundHeroes"
-            )
-            isButtonEnabled = amountOfFoundHeroes != 0
-        }
-        else -> {
-            Text(
-                modifier = Modifier
-                    .padding(top = 8.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.h6,
-                text = "No connection"
-            )
-            isButtonEnabled = false
-        }
-    }
-
-    Button(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = {},
-        enabled = isButtonEnabled
-    ) {
-        Text(stringResource(R.string.search_button))
-    }
-}
-
-@Composable
-fun PowerRow(
-    modifier: Modifier = Modifier,
-    power: Power,
-    isPowerChosen : (Power) -> Boolean,
-    choosePower: (Power) -> Unit,
-    unchoosePower: (Power) -> Unit,
+fun HeroApp(
+    heroBuilderViewModel: HeroBuilderViewModel,
+    heroListViewModel: HeroListViewModel
 ){
-    var isClicked = isPowerChosen(power)
-    val surfaceColor by animateColorAsState(targetValue = if(isClicked) Color.Green else Color.White)
-    Surface(
-        modifier = modifier
-            .padding(8.dp),
-        shape = RoundedCornerShape(50),
-        color = surfaceColor,
-        elevation = 5.dp
-    ) {
-        Text(
-            modifier = Modifier
-                .clickable {
-                    if (!isClicked) {
-                        choosePower(power)
-                    } else {
-                        unchoosePower(power)
-                    }
-                    isClicked = !isClicked
-                }
-                .fillMaxSize()
-                .padding(4.dp),
-            textAlign = TextAlign.Center,
-            text = power.name
-        )
-    }
-}
-
-@Composable
-fun ErrorMessage(status: Status, tryAgain: () -> Unit){
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            textAlign = TextAlign.Center,
-            text = "JOPA"
-        )
-        Button(
-            modifier = Modifier.padding(all = 8.dp),
-            onClick = tryAgain
+    HeroFinderTheme {
+        val navController = rememberNavController()
+        NavHost(
+            navController = navController,
+            startDestination = HeroScreens.HeroBuilder.name
         ) {
-            Text(stringResource(R.string.try_again_button))
+            composable(HeroScreens.HeroBuilder.name) {
+               HeroBuilderScreen(
+                   viewModel = heroBuilderViewModel
+               ) {
+                   heroListViewModel.initList(heroBuilderViewModel.getHeroIds())
+                   Log.i("HeroApp", "to next screen")
+                   navController.navigate(HeroScreens.HeroList.name)
+               }
+            }
+            composable(HeroScreens.HeroList.name) {
+                HeroListScreen(
+                    viewModel = heroListViewModel,
+                ) {
+
+                }
+            }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun HeroCardPreview() {
-    HeroFinderTheme {
-        HeroCard()
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun ErrorMessagePreview(){
-    HeroFinderTheme {
-        ErrorMessage(status = Status.NETWORK,{})
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    HeroFinderTheme {
-        HeroBuilder(listOf(),100, Status.LOADING, { false },{},{})
-    }
-}
