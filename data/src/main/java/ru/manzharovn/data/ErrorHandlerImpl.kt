@@ -5,6 +5,7 @@ import ru.manzharovn.domain.models.ErrorEntity
 import ru.manzharovn.domain.models.ErrorHandler
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
 
 class ErrorHandlerImpl @Inject constructor() : ErrorHandler {
@@ -13,6 +14,7 @@ class ErrorHandlerImpl @Inject constructor() : ErrorHandler {
 
         return when(throwable) {
             is IOException -> ErrorEntity.Network
+            is CancellationException -> ErrorEntity.CoroutineCancel
             is HttpException -> {
                 when(throwable.code()){
 

@@ -9,6 +9,8 @@ sealed class ErrorEntity {
 
     object Network: ErrorEntity()
 
+    object CoroutineCancel: ErrorEntity()
+
     object NotFound: ErrorEntity()
 
     object Unknown: ErrorEntity()
