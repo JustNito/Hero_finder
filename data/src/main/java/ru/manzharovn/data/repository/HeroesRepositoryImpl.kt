@@ -1,16 +1,13 @@
 package ru.manzharovn.data.repository
 
 import android.util.Log
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
 import ru.manzharovn.data.datasource.HeroesRemoteDataSource
 import ru.manzharovn.data.models.HeroEntity
+import ru.manzharovn.data.utils.removeHtmlTags
 import ru.manzharovn.domain.models.HeroFullDescription
 import ru.manzharovn.domain.models.HeroShortDescription
 import ru.manzharovn.domain.repository.HeroesRepository
 import javax.inject.Inject
-import kotlin.coroutines.coroutineContext
 
 class HeroesRepositoryImpl @Inject constructor(
         val heroesRemoteDataSource: HeroesRemoteDataSource
@@ -19,8 +16,10 @@ class HeroesRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun getHeroShortDescription(): List<HeroShortDescription> {
-        TODO("Not yet implemented")
+    override suspend fun getHeroShortDescriptionById(id: Int): HeroShortDescription {
+        val data = heroesRemoteDataSource.getHeroById(id).results
+        Log.i("Repo", "hero id: $id")
+        return data.mapHeroEntityToDomain()
     }
 
     override suspend fun getHeroIdsByPowerId(id: Int): List<Int> {
@@ -43,8 +42,8 @@ class HeroesRepositoryImpl @Inject constructor(
     private fun HeroEntity.mapHeroEntityToDomain(): HeroShortDescription =
         HeroShortDescription(
             name = name,
-            description = description,
-            imageSrc = imageSrc
+            description = description?.removeHtmlTags(),
+            imageSrc = imageSrc.iconUrl
         )
 
 }

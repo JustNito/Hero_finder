@@ -8,7 +8,7 @@ interface HeroesRepository {
 
     suspend fun getHeroFullDescription(id: Int): HeroFullDescription
 
-    suspend fun getHeroShortDescription(): List<HeroShortDescription>
+    suspend fun getHeroShortDescriptionById(id: Int): HeroShortDescription
 
     suspend fun getHeroIdsByPowerId(id: Int): List<Int>
 

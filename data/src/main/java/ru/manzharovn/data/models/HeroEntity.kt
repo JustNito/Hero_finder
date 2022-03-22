@@ -4,7 +4,11 @@ import com.squareup.moshi.Json
 
 data class HeroEntity(
     val name: String,
-    val description: String,
+    val description: String?,
     @Json(name = "image")
-    val imageSrc: String
-)
+    val imageSrc: Image
+) {
+    data class Image(
+      @Json(name = "thumb_url") val iconUrl: String?
+    )
+}

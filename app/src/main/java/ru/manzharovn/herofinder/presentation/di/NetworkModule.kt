@@ -34,7 +34,7 @@ class NetworkModule {
         val okHttpClient = OkHttpClient.Builder().addInterceptor { chain ->
             val original = chain.request()
             val url = original
-                .url()
+                .url
                 .newBuilder()
                 .addQueryParameter("api_key",ComicVineInfo.API_KEY)
                 .addQueryParameter("format", "json")
